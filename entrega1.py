@@ -1,64 +1,69 @@
 import ply.lex as lex
 
+#reserved words
+reserved = {
+    'def': 'DEF',
+    'true': 'TRUE',
+    'false': 'FALSE',
+    'none': 'NONE',
+    'and': 'AND',
+    'or': 'OR',
+    'not': 'NOT',
+    'is': 'IS',
+    'if': 'IF',
+    'elif': 'ELIF',
+    'else': 'ELSE',
+    'for': 'FOR',
+    'while': 'WHILE',
+    'break': 'BREAK',
+    'continue': 'CONTINUE',
+    'pass': 'PASS',
+    'try': 'TRY',
+    'except': 'EXCEPT',
+    'return': 'RETURN',
+    'import': 'IMPORT',
+    'from': 'FROM',
+    'as': 'AS',
+    'print': 'PRINT',
+    'int': 'INT_TYPE',
+    'program': 'PROGRAM',
+    'float': 'FLOAT_TYPE',
+    'string': 'STRING',
+    'var': 'VAR',
+    'main': 'MAIN',
+    'void': 'VOID',
+    'end': 'END',
+    }
+
+
+
 # List of token names
-tokens = (
-   'DEF',
-   'ID',
-   'INT',
-   'FLOAT',
-   'STRING',
-   'TRUE',
-   'FALSE',
-   'NONE',
-   'AND',
-   'OR',
-   'NOT',
-   'IS',
-   'IF',
-   'ELIF',
-   'ELSE',
-   'FOR',
-   'WHILE',
-   'BREAK',
-   'CONTINUE',
-   'PASS',
-   'TRY',
-   'EXCEPT',
-   'RETURN',
-   'IMPORT',
-   'FROM',
-   'AS',
-   'PRINT',
-   'EQUAL',
-   'EQ',
-   'NEQ',
-   'GT',
-   'LT',
-   'GTE',
-   'LTE',
-   'PLUS',
-   'MINUS',
-   'MULT',
-   'DIV',
-   'LPAREN',
-   'RPAREN',
-   'LBRACE',
-   'RBRACE',
-   'LBRACKET',
-   'RBRACKET',
-   'SEMI',
-   'COLON',
-   'COMMA',
-   'COMMENT',
-   'IN',
-   'PROGRAM',
-   'VAR',
-   'MAIN',
-   'VOID',
-   'END',
-   'INT_TYPE',
-   'FLOAT_TYPE'
-)
+tokens = [
+    "ID",
+    "EQUAL",
+    "EQ",
+    "NEQ",
+    "GT",
+    "LT",
+    "GTE",
+    "LTE",
+    "PLUS",
+    "MINUS",
+    "MULT",
+    "DIV",
+    "LPAREN",
+    "RPAREN",
+    "LBRACE",
+    "RBRACE",
+    "LBRACKET",
+    "RBRACKET",
+    "SEMI",
+    "COLON",
+    "COMMA",
+    "COMMENT",
+    "INT",
+    "FLOAT",
+] + list(reserved.values())
 
 # Regular expression rules for simple tokens
 t_EQUAL=r'='
@@ -82,134 +87,10 @@ t_SEMI=r';'
 t_COLON=r':'
 t_COMMA=r','
 
-#Keywords
-def t_DEF(t):
-    r'\bdef\b'
-    return t
-
-def t_TRUE(t):
-    r'\btrue\b'
-    return t
-
-def t_FALSE(t):
-    r'\bfalse\b'
-    return t
-
-def t_NONE(t):
-    r'\bnone\b'
-    return t
-
-def t_AND(t):
-    r'\band\b'
-    return t
-
-def t_OR(t):
-    r'\bor\b'
-    return t
-
-def t_NOT(t):
-    r'\bnot\b'
-    return t
-
-def t_IS(t):
-    r'\bis\b'
-    return t
-
-def t_IF(t):
-    r'\bif\b'
-    return t
-
-def t_ELIF(t):
-    r'\belif\b'
-    return t
-
-def t_ELSE(t):
-    r'\belse\b'
-    return t
-
-def t_FOR(t):
-    r'\bfor\b'
-    return t
-
-def t_WHILE(t):
-    r'\bwhile\b'
-    return t
-
-def t_BREAK(t):
-    r'\bbreak\b'
-    return t
-
-def t_CONTINUE(t):
-    r'\bcontinue\b'
-    return t
-
-def t_PASS(t):
-    r'\bpass\b'
-    return t
-
-def t_TRY(t):
-    r'\btry\b'
-    return t
-
-def t_EXCEPT(t):
-    r'\bexcept\b'
-    return t
-
-def t_RETURN(t):
-    r'\breturn\b'
-    return t
-
-def t_IMPORT(t):
-    r'\bimport\b'
-    return t
-
-def t_FROM(t):
-    r'\bfrom\b'
-    return t
-
-def t_AS(t):
-    r'\bas\b'
-    return t
-
-def t_PRINT(t):
-    r'\bprint\b'
-    return t
-
-def t_IN(t):
-    r'\bin\b'
-    return t
-
-def t_PROGRAM(t):
-    r'\bprogram\b'
-    return t
-
-def t_VAR(t):
-    r'\bvar\b'
-    return t
-
-def t_MAIN(t):
-    r'\bmain\b'
-    return t
-
-def t_VOID(t):
-    r'\bvoid\b'
-    return t
-
-def t_END(t):
-    r'\bend\b'
-    return t
-
-def t_INT_TYPE(t):
-    r'\bint\b'
-    return t
-
-def t_FLOAT_TYPE(t):
-    r'\bfloat\b'
-    return t
-
 # A regular expression rule with some action code
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*\b'
+    t.type = reserved.get(t.value, 'ID')    # Check for reserved words
     return t
 
 def t_FLOAT(t):
@@ -246,7 +127,8 @@ def t_error(t):
 # Build the lexer
 lexer = lex.lex()
 
-file = 'plyex.txt'
+
+file = 'plyex.cpp'
 
 with open(file) as f:
     # Give the lexer some input
@@ -257,8 +139,8 @@ with open(file) as f:
         while True:
             tok = lexer.token()
             if not tok: 
-                break      # No more input
-            print(tok)
+                break   
+            print(tok)   # No more input
 
 
 
@@ -275,3 +157,4 @@ with open(file) as f:
 # LexToken(NUMBER,20,3,18)
 # LexToken(TIMES,'*',3,20)
 # LexToken(NUMBER,2,3,21)
+
