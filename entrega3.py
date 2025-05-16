@@ -1,9 +1,8 @@
-# Yacc example
-
+import os
 import ply.yacc as yacc
-
-# Get the token map from the lexer. This is required.
 from entrega1 import tokens
+from structures import *
+from semantic import *
 
 # Program structure
 def p_program(p):
@@ -20,8 +19,13 @@ def p_declarations(p):
 
 def p_declaration(p):
     'declaration : VAR ID COLON type SEMI'
-    print(f"Parsed declaration: {p[2]} of type {p[4]}")
-    p[0] = ('declaration', p[2], p[4])   
+    var_name = p[2]
+    var_type = p[4]
+    
+    if declarar_variable(var_name, var_type, current_function):
+        p[0] = ('declaration', var_name, var_type)
+    else:
+        p[0] = None  
 
 def p_functions(p):
     '''functions : functions function
@@ -32,10 +36,67 @@ def p_functions(p):
 
 def p_function(p):
     'function : VOID ID LPAREN parameters RPAREN COLON type block'
+    global current_function
+    func_name = p[2]
+    param_list = p[4]
+    return_type = p[7]
+    block = p[8]
+    
+    previous_function = current_function
+    current_function = func_name
+
+    if func_name in function_directory:
+        print(f"[Error] La función '{func_name}' ya está declarada")
+        p[0] = None
+        return
+    
+    if func_name in variable_table['global']:
+        print(f"[Error] El nombre '{func_name}' ya está usado como variable global, no puede ser usado como función")
+        p[0] = None
+        return
+    
+    function_directory[func_name] = {
+        'return_type': return_type,
+        'params': param_list
+    }
+
+    variable_table[func_name] = {}
+
+    if not validar_parametros_unicos(param_list, func_name):
+        p[0] = None
+        return
+    
+    for param in param_list:
+        variable_table[func_name][param[2]] = param[1]
+
+    if not validar_return_en_funcion(func_name, block[1]):
+        p[0] = None
+        return
+
+    current_function = previous_function
     p[0] = ('function', p[2], p[4], p[7], p[8])
 
 def p_factor_funccall(p):
     'factor : ID LPAREN args RPAREN'
+    nombre_funcion = p[1]
+    argumentos = p[3]
+
+    if not validar_que_no_sea_variable(nombre_funcion, current_function):
+        p[0] = None
+        return
+    
+    if not validar_funcion_existe(nombre_funcion):
+        p[0] = None
+        return
+    
+    if not validar_numero_argumentos(nombre_funcion, argumentos):
+        p[0] = None
+        return
+    
+    if not validar_tipos_argumentos(nombre_funcion, argumentos):
+        p[0] = None
+        return
+    
     p[0] = ('funccall', p[1], p[3])
 
 def p_args(p):
@@ -64,6 +125,7 @@ def p_parameter(p):
 def p_type(p):
     '''type : INT_TYPE
             | FLOAT_TYPE
+            | VOID
             | STRING'''
     p[0] = p[1]
 
@@ -90,8 +152,24 @@ def p_statement(p):
 # Assignment
 def p_assignment(p):
     'assignment : ID EQUAL expression SEMI'
-    p[0] = ('assignment', p[1], p[3])
+    var_name = p[1]
+    var_type = obtener_tipo_variable(var_name, current_function)
 
+    if var_type is None:
+        p[0] = None
+        return
+
+    expr_type = obtener_tipo_expresion(p[3])
+
+    if expr_type is None:
+        p[0] = None
+        return
+
+    if '=' in semantic_cube.get(var_type, {}).get(expr_type, {}):
+        p[0] = ('assignment', var_name, p[3])
+    else:
+        print(f"[Error] Asignación inválida: no se puede asignar tipo '{expr_type}' a variable '{var_name}' de tipo '{var_type}'")
+        p[0] = None
 
 # If statement
 def p_if_statement(p):
@@ -148,11 +226,22 @@ def p_factor_num(p):
  
 def p_factor_id(p):
     'factor : ID'
-    p[0] = ('id', p[1])
+    var_name = p[1]
+    var_type = obtener_tipo_variable(var_name, current_function)
+
+    p[0] = ('id', var_name, var_type) if var_type else None
 
 def p_factor_expr(p):
     'factor : LPAREN expression RPAREN'
     p[0] = p[2]
+
+def p_factor_string(p):
+    'factor : STRING'
+    p[0] = p[1]
+
+def p_factor_float(p):
+    'factor : FLOAT'
+    p[0] = p[1]
 
 # Empty rule
 def p_empty(p):
@@ -169,9 +258,19 @@ def p_error(p):
 # Build the parser
 parser = yacc.yacc()
 
-# Test the parser with the contents of plyex.cpp
-file = 'test.cpp'
-with open(file, 'r') as f:
-    data = f.read()
-    result = parser.parse(data)
-    print(result)
+test_dir = 'tests'
+for filename in os.listdir(test_dir):
+    if filename.endswith('.cpp'):
+        file_path = os.path.join(test_dir, filename)
+        print(f"\n--- Prueba: {filename} ---")
+        
+        variable_table.clear()
+        variable_table['global'] = {}
+        function_directory.clear()
+        current_function = 'global'
+
+        parser = yacc.yacc(debug=False, write_tables=False)
+
+        with open(file_path, 'r') as f:
+            data = f.read()
+            result = parser.parse(data)

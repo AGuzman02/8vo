@@ -109,7 +109,7 @@ def t_STRING(t):
 
 def t_COMMENT(t):
     r'\#.*'
-    return t
+    pass
 
 # Define a rule so we can track line numbers
 def t_newline(t):
@@ -128,19 +128,19 @@ def t_error(t):
 lexer = lex.lex()
 
 
-file = 'plyex.cpp'
+#file = 'test.cpp'
 
-with open(file) as f:
+#with open(file) as f:
     # Give the lexer some input
-    for x in f:
-        lexer.input(x)
+    #for x in f:
+        #lexer.input(x)
 
         # Tokenize
-        while True:
-            tok = lexer.token()
-            if not tok: 
-                break   
-            print(tok)   # No more input
+        #while True:
+            #tok = lexer.token()
+            #if not tok: 
+                #break   
+            #print(tok)   # No more input
 
 
 
